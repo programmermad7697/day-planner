@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Focus & Flow - Study & Personal Day Planner</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        study: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0284c7',
+                            600: '#0369a1',
+                        },
+                        personal: {
+                            50: '#fdf2f8',
+                            100: '#fce7f3',
+                            500: '#ec4899',
+                            600: '#db2777',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #475569;
+        }
+
+        .task-card {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .task-card:hover {
+            transform: translateY(-1px);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.2s ease forwards;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col">
+
+    <!-- Top Navigation Header -->
+    <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700/80 sticky top-0 z-20 transition-colors shadow-xs">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+            <!-- App Logo / Title -->
+            <div class="flex items-center space-x-3">
+                <div class="w-9 h-9 rounded-xl bg-slate-900 dark:bg-sky-500 text-white flex items-center justify-center font-bold text-base shadow-sm">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-slate-900 dark:text-slate-100 text-lg leading-tight">Focus & Flow</h1>
+                    <p class="text-[11px] text-slate-400 font-medium">Study & Life Planner</p>
+                </div>
+            </div>
+
+            <!-- Mode Switcher (Tab Toggle) -->
+            <div class="bg-slate-100 dark:bg-slate-900/80 p-1 rounded-xl flex items-center space-x-1 border border-slate-200/60 dark:border-slate-700/60">
+                <button id="mode-study-btn" onclick="switchMode('study')" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-2 transition-all bg-white dark:bg-slate-800 text-sky-600 dark:text-sky-400 shadow-xs">
+                    <i class="fa-solid fa-book-open"></i>
+                    <span>Study Mode</span>
+                </button>
+                <button id="mode-personal-btn" onclick="switchMode('personal')" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-2 transition-all text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
+                    <i class="fa-solid fa-user"></i>
+                    <span>Personal Mode</span>
+                </button>
+            </div>
+
+            <!-- Header Controls -->
+            <div class="flex items-center space-x-2">
+                <!-- Theme Switcher -->
+                <button id="theme-toggle" class="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700/60 rounded-xl transition-colors">
+                    <i id="theme-icon" class="fa-solid fa-moon text-base"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-5xl mx-auto px-4 sm:px-6 py-6 flex-1 w-full space-y-6">
+
+        <!-- Banner Card: Today's Progress & Pomodoro Widget -->
+        <div id="planner-banner" class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gradient-to-r from-sky-500 to-indigo-600 dark:from-sky-600 dark:to-indigo-800 text-white p-5 rounded-2xl shadow-sm">
+            <!-- Daily Summary & Progress -->
+            <div class="md:col-span-2 flex flex-col justify-between space-y-4">
+                <div>
+                    <span id="planner-mode-badge" class="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-white/20 text-white backdrop-blur-xs mb-2">
+                        Study Planner Active
+                    </span>
+                    <h2 id="today-date-heading" class="text-xl font-bold tracking-tight">Today's Agenda</h2>
+                    <p id="planner-subtitle" class="text-xs text-sky-100 mt-1">Stay focused on your study targets and exam prep.</p>
+                </div>
+
+                <!-- Daily Progress Bar -->
+                <div class="bg-white/10 backdrop-blur-xs p-3 rounded-xl border border-white/15 space-y-2">
+                    <div class="flex justify-between items-center text-xs">
+                        <span id="progress-status-text" class="font-medium">0 of 0 tasks completed</span>
+                        <span id="progress-percent" class="font-bold">0%</span>
+                    </div>
+                    <div class="w-full bg-black/20 h-2 rounded-full overflow-hidden">
+                        <div id="progress-bar" class="bg-white h-full w-0 transition-all duration-500 rounded-full"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pomodoro Quick Timer (Visible in Study Mode) -->
+            <div id="pomodoro-widget" class="bg-white/10 dark:bg-black/20 backdrop-blur-md rounded-xl p-4 border border-white/20 flex flex-col justify-between">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-sky-100 flex items-center gap-1.5">
+                        <i class="fa-solid fa-stopwatch"></i> Focus Timer
+                    </span>
+                    <span id="pomo-mode-label" class="text-[10px] font-bold px-2 py-0.5 rounded bg-white/20">25m Focus</span>
+                </div>
+
+                <div class="text-center py-2">
+                    <div id="pomo-display" class="text-3xl font-mono font-bold tracking-wider">25:00</div>
+                </div>
+
+                <div class="flex items-center justify-center space-x-2">
+                    <button id="pomo-start-btn" onclick="togglePomodoro()" class="flex-1 py-1.5 bg-white text-sky-700 font-semibold text-xs rounded-lg shadow-xs hover:bg-sky-50 transition-colors">
+                        Start
+                    </button>
+                    <button onclick="resetPomodoro()" class="px-2.5 py-1.5 bg-white/20 hover:bg-white/30 text-white rounded-lg text-xs transition-colors">
+                        <i class="fa-solid fa-rotate-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Filters & Add Task Controls -->
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white dark:bg-slate-800 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs">
+            <!-- Filter Tabs -->
+            <div class="flex items-center space-x-1 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl">
+                <button onclick="setFilter('today')" id="filter-today" class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 shadow-xs">
+                    Today
+                </button>
+                <button onclick="setFilter('upcoming')" id="filter-upcoming" class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200">
+                    Upcoming
+                </button>
+                <button onclick="setFilter('completed')" id="filter-completed" class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200">
+                    Completed
+                </button>
+                <button onclick="setFilter('all')" id="filter-all" class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200">
+                    All
+                </button>
+            </div>
+
+            <!-- New Task Button -->
+            <button onclick="openModal()" class="flex items-center justify-center space-x-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 dark:bg-sky-500 dark:hover:bg-sky-600 text-white text-xs font-medium rounded-xl shadow-xs transition-all active:scale-95">
+                <i class="fa-solid fa-plus text-xs"></i>
+                <span id="add-btn-text">Add Task / Homework</span>
+            </button>
+        </div>
+
+        <!-- Task List Area -->
+        <div id="task-list" class="space-y-2.5 min-h-[280px]">
+            <!-- Dynamic Tasks Rendered Here -->
+        </div>
+
+        <!-- Empty State View -->
+        <div id="empty-state" class="hidden flex-col items-center justify-center py-16 px-4 text-center bg-white dark:bg-slate-800/40 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700/80">
+            <div class="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-700/50 flex items-center justify-center text-slate-400 mb-3 text-lg">
+                <i class="fa-solid fa-check text-xl"></i>
+            </div>
+            <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200">No tasks found</h3>
+            <p class="text-xs text-slate-400 mt-1 max-w-xs">You're all clear! Click the "Add Task" button above to schedule your day.</p>
+        </div>
+    </main>
+
+    <!-- Create / Edit Task Modal -->
+    <div id="task-modal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden animate-fade-in p-6 space-y-4">
+            
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-700">
+                <h3 id="modal-title" class="font-bold text-slate-800 dark:text-slate-100 text-base">Add Study Task</h3>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                    <i class="fa-solid fa-xmark text-base"></i>
+                </button>
+            </div>
+
+            <form id="task-form" onsubmit="handleFormSubmit(event)" class="space-y-3.5">
+                <input type="hidden" id="task-id">
+
+                <!-- Task Title -->
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Task / Subject Title *</label>
+                    <input type="text" id="task-title" required placeholder="e.g., Read Physics Chapter 4 or Morning Jog" class="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500 dark:text-slate-100">
+                </div>
+
+                <!-- Category / Subject selection -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Category / Subject</label>
+                        <select id="task-category" class="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500 dark:text-slate-100">
+                            <!-- Populated dynamically based on current mode -->
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Priority</label>
+                        <select id="task-priority" class="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500 dark:text-slate-100">
+                            <option value="Low">Low</option>
+                            <option value="Medium" selected>Medium</option>
+                            <option value="High">High</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Time Block & Date -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Time Block</label>
+                        <input type="text" id="task-time" placeholder="e.g., 9:00 AM - 10:30 AM" class="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500 dark:text-slate-100">
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Date</label>
+                        <input type="date" id="task-date" class="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500 dark:text-slate-100">
+                    </div>
+                </div>
+
+                <!-- Notes / Description -->
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Notes / Reminders</label>
+                    <textarea id="task-notes" rows="2" placeholder="Specific goals, page numbers, or checklist..." class="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500 dark:text-slate-100 resize-none"></textarea>
+                </div>
+
+                <!-- Modal Actions -->
+                <div class="pt-3 flex items-center justify-end space-x-2">
+                    <button type="button" onclick="closeModal()" class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-xs font-medium rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 dark:bg-sky-500 dark:hover:bg-sky-600 text-white text-xs font-medium rounded-xl shadow-xs">Save Task</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Application JavaScript Logic -->
+    <script>
+        // --- Core App State ---
+        let currentMode = 'study'; // 'study' or 'personal'
+        let currentFilter = 'today'; // 'today', 'upcoming', 'completed', 'all'
+        let tasks = [];
+
+        // Categories & Color Badges
+        const studyCategories = ['Math', 'Science', 'History', 'Language', 'Coding', 'Exam Prep', 'Homework', 'General Study'];
+        const personalCategories = ['Morning Routine', 'Fitness', 'Chores', 'Errand', 'Self Care', 'Finance', 'Reminder'];
+
+        const categoryColors = {
+            'Math': 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
+            'Science': 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
+            'History': 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
+            'Language': 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300',
+            'Coding': 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300',
+            'Exam Prep': 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300',
+            'Morning Routine': 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300',
+            'Fitness': 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300',
+            'Chores': 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300',
+            'Errand': 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300',
+            'Self Care': 'bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300',
+            'Default': 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300'
+        };
+
+        // --- Pomodoro Timer State ---
+        let pomoSeconds = 25 * 60;
+        let pomoIsRunning = false;
+        let pomoInterval = null;
+        let pomoIsWorkSession = true;
+
+        // --- DOM Elements ---
+        const taskListEl = document.getElementById('task-list');
+        const emptyStateEl = document.getElementById('empty-state');
+        const taskModalEl = document.getElementById('task-modal');
+        const taskFormEl = document.getElementById('task-form');
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            initTheme();
+            setCurrentDateHeading();
+            loadTasks();
+            render();
+        });
+
+        function setCurrentDateHeading() {
+            const options = { weekday: 'long', month: 'short', day: 'numeric' };
+            const todayStr = new Date().toLocaleDateString(undefined, options);
+            document.getElementById('today-date-heading').textContent = `Today, ${todayStr}`;
+            document.getElementById('task-date').value = new Date().toISOString().split('T')[0];
+        }
+
+        // --- Theme Handler ---
+        function initTheme() {
+            const savedTheme = localStorage.getItem('planner_theme');
+            const themeIcon = document.getElementById('theme-icon');
+            if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+                themeIcon.className = 'fa-solid fa-sun text-amber-400 text-base';
+            } else {
+                document.documentElement.classList.remove('dark');
+                themeIcon.className = 'fa-solid fa-moon text-slate-500 text-base';
+            }
+        }
+
+        document.getElementById('theme-toggle').addEventListener('click', () => {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('planner_theme', isDark ? 'dark' : 'light');
+            document.getElementById('theme-icon').className = isDark ? 'fa-solid fa-sun text-amber-400 text-base' : 'fa-solid fa-moon text-slate-500 text-base';
+        });
+
+        // --- Storage Operations ---
+        function loadTasks() {
+            const saved = localStorage.getItem('focus_planner_tasks');
+            if (saved) {
+                try {
+                    tasks = JSON.parse(saved);
+                } catch (e) {
+                    tasks = [];
+                }
+            } else {
+                // Initial Default Tasks
+                const today = new Date().toISOString().split('T')[0];
+                tasks = [
+                    {
+                        id: '1',
+                        title: 'Mathematics Chapter 5 Exercises',
+                        mode: 'study',
+                        category: 'Math',
+                        priority: 'High',
+                        time: '9:00 AM - 10:30 AM',
+                        date: today,
+                        notes: 'Solve problem set 5.1 to 5.4',
+                        completed: false
+                    },
+                    {
+                        id: '2',
+                        title: 'Morning 20-min Light Workout',
+                        mode: 'personal',
+                        category: 'Fitness',
+                        priority: 'Medium',
+                        time: '7:30 AM',
+                        date: today,
+                        notes: 'Stretching and core routine',
+                        completed: true
+                    }
+                ];
+                saveTasks();
+            }
+        }
+
+        function saveTasks() {
+            localStorage.setItem('focus_planner_tasks', JSON.stringify(tasks));
+            render();
+        }
+
+        // --- Mode Switching (Study vs Personal) ---
+        function switchMode(mode) {
+            currentMode = mode;
+
+            const studyBtn = document.getElementById('mode-study-btn');
+            const personalBtn = document.getElementById('mode-personal-btn');
+            const banner = document.getElementById('planner-banner');
+            const modeBadge = document.getElementById('planner-mode-badge');
+            const subtitle = document.getElementById('planner-subtitle');
+            const pomoWidget = document.getElementById('pomodoro-widget');
+            const addBtnText = document.getElementById('add-btn-text');
+
+            if (mode === 'study') {
+                studyBtn.className = 'px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-2 transition-all bg-white dark:bg-slate-800 text-sky-600 dark:text-sky-400 shadow-xs';
+                personalBtn.className = 'px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-2 transition-all text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200';
+                
+                banner.className = 'grid grid-cols-1 md:grid-cols-3 gap-4 bg-gradient-to-r from-sky-500 to-indigo-600 dark:from-sky-600 dark:to-indigo-800 text-white p-5 rounded-2xl shadow-sm';
+                modeBadge.textContent = 'Study Planner Active';
+                subtitle.textContent = 'Stay focused on your study targets, homework, and exam prep.';
+                pomoWidget.classList.remove('hidden');
+                addBtnText.textContent = 'Add Study Task';
+            } else {
+                personalBtn.className = 'px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-2 transition-all bg-white dark:bg-slate-800 text-pink-600 dark:text-pink-400 shadow-xs';
+                studyBtn.className = 'px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-2 transition-all text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200';
+                
+                banner.className = 'grid grid-cols-1 md:grid-cols-3 gap-4 bg-gradient-to-r from-pink-500 to-rose-600 dark:from-pink-600 dark:to-rose-800 text-white p-5 rounded-2xl shadow-sm';
+                modeBadge.textContent = 'Personal Day Planner Active';
+                subtitle.textContent = 'Organize your routines, chores, habits, and personal errands.';
+                pomoWidget.classList.add('hidden');
+                addBtnText.textContent = 'Add Personal Task';
+            }
+
+            render();
+        }
+
+        // --- Quick Filters ---
+        function setFilter(filter) {
+            currentFilter = filter;
+            const filters = ['today', 'upcoming', 'completed', 'all'];
+            filters.forEach(f => {
+                const btn = document.getElementById(`filter-${f}`);
+                if (f === filter) {
+                    btn.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 shadow-xs';
+                } else {
+                    btn.className = 'px-3 py-1.5 rounded-lg text-xs font-medium transition-all text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200';
+                }
+            });
+            render();
+        }
+
+        // --- Filtering Logic ---
+        function getFilteredTasks() {
+            const todayStr = new Date().toISOString().split('T')[0];
+
+            return tasks.filter(task => {
+                // Must match current mode (study vs personal)
+                if (task.mode !== currentMode) return false;
+
+                // Status/Date Filter
+                if (currentFilter === 'today') {
+                    return task.date === todayStr && !task.completed;
+                } else if (currentFilter === 'upcoming') {
+                    return task.date > todayStr && !task.completed;
+                } else if (currentFilter === 'completed') {
+                    return task.completed;
+                }
+                return true; // 'all'
+            });
+        }
+
+        // --- Render UI ---
+        function render() {
+            const filtered = getFilteredTasks();
+            const todayStr = new Date().toISOString().split('T')[0];
+
+            // Render Progress Bar for Today's Mode Tasks
+            const modeTodayTasks = tasks.filter(t => t.mode === currentMode && t.date === todayStr);
+            const totalCount = modeTodayTasks.length;
+            const completedCount = modeTodayTasks.filter(t => t.completed).length;
+            const percent = totalCount === 0 ? 0 : Math.round((completedCount / totalCount) * 100);
+
+            document.getElementById('progress-bar').style.width = `${percent}%`;
+            document.getElementById('progress-percent').textContent = `${percent}%`;
+            document.getElementById('progress-status-text').textContent = `${completedCount} of ${totalCount} tasks completed today`;
+
+            // Render Task Cards
+            taskListEl.innerHTML = '';
+            if (filtered.length === 0) {
+                emptyStateEl.classList.remove('hidden');
+                emptyStateEl.classList.add('flex');
+            } else {
+                emptyStateEl.classList.add('hidden');
+                emptyStateEl.classList.remove('flex');
+
+                filtered.forEach(task => {
+                    const card = document.createElement('div');
+                    const colorClass = categoryColors[task.category] || categoryColors['Default'];
+                    const priorityDot = task.priority === 'High' ? 'bg-rose-500' : (task.priority === 'Medium' ? 'bg-amber-500' : 'bg-slate-300');
+
+                    card.className = `task-card bg-white dark:bg-slate-800 p-3.5 sm:p-4 rounded-xl border border-slate-200/70 dark:border-slate-700/70 shadow-xs flex items-center justify-between gap-3 ${task.completed ? 'opacity-60' : ''} animate-fade-in`;
+
+                    card.innerHTML = `
+                        <div class="flex items-center space-x-3 flex-1 min-w-0">
+                            <!-- Toggle Checkbox Button -->
+                            <button onclick="toggleTask('${task.id}')" class="text-lg text-slate-300 hover:text-sky-500 dark:text-slate-600 dark:hover:text-sky-400 transition-colors focus:outline-none">
+                                <i class="${task.completed ? 'fa-solid fa-circle-check text-sky-500 dark:text-sky-400' : 'fa-regular fa-circle'}"></i>
+                            </button>
+
+                            <div class="flex-1 min-w-0 space-y-1">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span class="text-xs font-semibold ${task.completed ? 'line-through text-slate-400' : 'text-slate-800 dark:text-slate-100'}">
+                                        ${escapeHtml(task.title)}
+                                    </span>
+                                    <span class="text-[10px] font-medium px-2 py-0.5 rounded-md ${colorClass}">
+                                        ${escapeHtml(task.category)}
+                                    </span>
+                                </div>
+
+                                <div class="flex items-center space-x-3 text-[11px] text-slate-400">
+                                    ${task.time ? `<span><i class="fa-regular fa-clock mr-1"></i>${escapeHtml(task.time)}</span>` : ''}
+                                    ${task.date ? `<span><i class="fa-regular fa-calendar mr-1"></i>${task.date}</span>` : ''}
+                                    <span class="flex items-center gap-1">
+                                        <span class="w-1.5 h-1.5 rounded-full ${priorityDot}"></span>
+                                        ${task.priority}
+                                    </span>
+                                </div>
+
+                                ${task.notes ? `<p class="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5">${escapeHtml(task.notes)}</p>` : ''}
+                            </div>
+                        </div>
+
+                        <!-- Action Controls -->
+                        <div class="flex items-center space-x-1">
+                            <button onclick="openEditModal('${task.id}')" class="p-1.5 text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                                <i class="fa-regular fa-pen-to-square text-xs"></i>
+                            </button>
+                            <button onclick="deleteTask('${task.id}')" class="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                                <i class="fa-regular fa-trash-can text-xs"></i>
+                            </button>
+                        </div>
+                    `;
+
+                    taskListEl.appendChild(card);
+                });
+            }
+        }
+
+        // --- Task Mutations ---
+        function toggleTask(id) {
+            tasks = tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t);
+            saveTasks();
+        }
+
+        function deleteTask(id) {
+            tasks = tasks.filter(t => t.id !== id);
+            saveTasks();
+        }
+
+        // --- Modal Operations ---
+        function openModal() {
+            document.getElementById('task-id').value = '';
+            taskFormEl.reset();
+            document.getElementById('task-date').value = new Date().toISOString().split('T')[0];
+            
+            // Populate category select dropdown based on mode
+            const categorySelect = document.getElementById('task-category');
+            categorySelect.innerHTML = '';
+            const cats = currentMode === 'study' ? studyCategories : personalCategories;
+            cats.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c;
+                opt.textContent = c;
+                categorySelect.appendChild(opt);
+            });
+
+            document.getElementById('modal-title').textContent = currentMode === 'study' ? 'Add Study Task / Homework' : 'Add Personal Task';
+            taskModalEl.classList.remove('hidden');
+        }
+
+        function openEditModal(id) {
+            const task = tasks.find(t => t.id === id);
+            if (!task) return;
+
+            openModal();
+            document.getElementById('task-id').value = task.id;
+            document.getElementById('task-title').value = task.title;
+            document.getElementById('task-category').value = task.category;
+            document.getElementById('task-priority').value = task.priority;
+            document.getElementById('task-time').value = task.time || '';
+            document.getElementById('task-date').value = task.date || '';
+            document.getElementById('task-notes').value = task.notes || '';
+            document.getElementById('modal-title').textContent = 'Edit Task';
+        }
+
+        function closeModal() {
+            taskModalEl.classList.add('hidden');
+        }
+
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById('task-id').value;
+            const title = document.getElementById('task-title').value.trim();
+            const category = document.getElementById('task-category').value;
+            const priority = document.getElementById('task-priority').value;
+            const time = document.getElementById('task-time').value.trim();
+            const date = document.getElementById('task-date').value;
+            const notes = document.getElementById('task-notes').value.trim();
+
+            if (!title) return;
+
+            if (id) {
+                // Update existing
+                tasks = tasks.map(t => t.id === id ? { ...t, title, category, priority, time, date, notes } : t);
+            } else {
+                // Create new
+                const newTask = {
+                    id: Date.now().toString(),
+                    title,
+                    mode: currentMode,
+                    category,
+                    priority,
+                    time,
+                    date,
+                    notes,
+                    completed: false
+                };
+                tasks.unshift(newTask);
+            }
+
+            saveTasks();
+            closeModal();
+        }
+
+        // --- Pomodoro Timer Functions ---
+        function togglePomodoro() {
+            const btn = document.getElementById('pomo-start-btn');
+            if (pomoIsRunning) {
+                clearInterval(pomoInterval);
+                pomoIsRunning = false;
+                btn.textContent = 'Start';
+            } else {
+                pomoIsRunning = true;
+                btn.textContent = 'Pause';
+                pomoInterval = setInterval(updatePomodoro, 1000);
+            }
+        }
+
+        function resetPomodoro() {
+            clearInterval(pomoInterval);
+            pomoIsRunning = false;
+            pomoIsWorkSession = true;
+            pomoSeconds = 25 * 60;
+            document.getElementById('pomo-start-btn').textContent = 'Start';
+            document.getElementById('pomo-mode-label').textContent = '25m Focus';
+            updatePomoDisplay();
+        }
+
+        function updatePomodoro() {
+            if (pomoSeconds > 0) {
+                pomoSeconds--;
+                updatePomoDisplay();
+            } else {
+                clearInterval(pomoInterval);
+                pomoIsRunning = false;
+                // Switch between work and short break
+                pomoIsWorkSession = !pomoIsWorkSession;
+                pomoSeconds = pomoIsWorkSession ? 25 * 60 : 5 * 60;
+                document.getElementById('pomo-mode-label').textContent = pomoIsWorkSession ? '25m Focus' : '5m Break';
+                document.getElementById('pomo-start-btn').textContent = 'Start';
+                updatePomoDisplay();
+            }
+        }
+
+        function updatePomoDisplay() {
+            const mins = Math.floor(pomoSeconds / 60);
+            const secs = pomoSeconds % 60;
+            document.getElementById('pomo-display').textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+        }
+    </script>
+</body>
+</html>
